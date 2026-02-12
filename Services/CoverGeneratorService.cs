@@ -1,6 +1,7 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.Fonts;
 
 namespace MusicStoreApp.Services;
@@ -15,19 +16,20 @@ public class CoverGeneratorService : ICoverGeneratorService
     public string GenerateCover(string title, string artist, int seed)
     {
         var random = new Random(seed);
-
-        // Создаем изображение 400x400
+        
+        // Create gradient background
         using var image = new Image<Rgba32>(400, 400);
-
-        // Генерация градиентного фона
+        
+        // Generate random gradient colors
         var r1 = random.Next(50, 255);
         var g1 = random.Next(50, 255);
         var b1 = random.Next(50, 255);
-
+        
         var r2 = random.Next(50, 255);
         var g2 = random.Next(50, 255);
         var b2 = random.Next(50, 255);
 
+        // Create gradient effect
         image.Mutate(ctx =>
         {
             for (int y = 0; y < 400; y++)
@@ -36,31 +38,40 @@ public class CoverGeneratorService : ICoverGeneratorService
                 var r = (byte)(r1 + (r2 - r1) * ratio);
                 var g = (byte)(g1 + (g2 - g1) * ratio);
                 var b = (byte)(b1 + (b2 - b1) * ratio);
-
-                ctx.Fill(new Rgba32(r, g, b), new RectangleF(0, y, 400, 1));
+                
+                ctx.Fill(new Color(new Rgba32(r, g, b)), new RectangleF(0, y, 400, 1));
             }
-
-            // Полупрозрачный прямоугольник для текста
-            ctx.Fill(new Rgba32(0, 0, 0, 128), new RectangleF(20, 320, 360, 60));
+            
+            // Add overlay rectangle for text background
+            ctx.Fill(new Color(new Rgba32(0, 0, 0, 128)), new RectangleF(20, 320, 360, 60));
         });
 
-        // Шрифты
-        var titleFont = SystemFonts.CreateFont("Arial", 24, FontStyle.Bold);
-        var artistFont = SystemFonts.CreateFont("Arial", 18, FontStyle.Regular);
-
-        // Рисуем текст напрямую через правильный вызов DrawText
+        // Add text (simplified without font - ImageSharp will use default)
         image.Mutate(ctx =>
         {
-            // Title
-            ctx.DrawText(title, titleFont, Color.White, new PointF(30, 330));
-
-            // Artist
-            ctx.DrawText(artist, artistFont, Color.LightGray, new PointF(30, 360));
+            var textOptions = new RichTextOptions(SystemFonts.CreateFont("Arial", 24, FontStyle.Bold))
+            {
+                Origin = new PointF(30, 330),
+                WrappingLength = 340,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            
+            ctx.DrawText(textOptions, title, Color.White);
+            
+            var artistOptions = new RichTextOptions(SystemFonts.CreateFont("Arial", 18, FontStyle.Regular))
+            {
+                Origin = new PointF(30, 360),
+                WrappingLength = 340,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            
+            ctx.DrawText(artistOptions, artist, Color.LightGray);
         });
 
-        // Конвертируем в Base64
+        // Convert to base64
         using var ms = new MemoryStream();
         image.SaveAsPng(ms);
-        return Convert.ToBase64String(ms.ToArray());
+        var bytes = ms.ToArray();
+        return Convert.ToBase64String(bytes);
     }
 }
