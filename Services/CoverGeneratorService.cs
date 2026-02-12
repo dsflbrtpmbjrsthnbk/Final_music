@@ -16,20 +16,18 @@ public class CoverGeneratorService : ICoverGeneratorService
     public string GenerateCover(string title, string artist, int seed)
     {
         var random = new Random(seed);
-        
-        // Create gradient background
+
         using var image = new Image<Rgba32>(400, 400);
-        
-        // Generate random gradient colors
+
+        // Gradient background
         var r1 = random.Next(50, 255);
         var g1 = random.Next(50, 255);
         var b1 = random.Next(50, 255);
-        
+
         var r2 = random.Next(50, 255);
         var g2 = random.Next(50, 255);
         var b2 = random.Next(50, 255);
 
-        // Create gradient effect
         image.Mutate(ctx =>
         {
             for (int y = 0; y < 400; y++)
@@ -38,40 +36,25 @@ public class CoverGeneratorService : ICoverGeneratorService
                 var r = (byte)(r1 + (r2 - r1) * ratio);
                 var g = (byte)(g1 + (g2 - g1) * ratio);
                 var b = (byte)(b1 + (b2 - b1) * ratio);
-                
+
                 ctx.Fill(new Color(new Rgba32(r, g, b)), new RectangleF(0, y, 400, 1));
             }
-            
-            // Add overlay rectangle for text background
+
             ctx.Fill(new Color(new Rgba32(0, 0, 0, 128)), new RectangleF(20, 320, 360, 60));
         });
 
-        // Add text (simplified without font - ImageSharp will use default)
+        // Fonts
+        var titleFont = SystemFonts.CreateFont("Arial", 24, FontStyle.Bold);
+        var artistFont = SystemFonts.CreateFont("Arial", 18, FontStyle.Regular);
+
         image.Mutate(ctx =>
         {
-            var textOptions = new RichTextOptions(SystemFonts.CreateFont("Arial", 24, FontStyle.Bold))
-            {
-                Origin = new PointF(30, 330),
-                WrappingLength = 340,
-                HorizontalAlignment = HorizontalAlignment.Left
-            };
-            
-            ctx.DrawText(textOptions, title, Color.White);
-            
-            var artistOptions = new RichTextOptions(SystemFonts.CreateFont("Arial", 18, FontStyle.Regular))
-            {
-                Origin = new PointF(30, 360),
-                WrappingLength = 340,
-                HorizontalAlignment = HorizontalAlignment.Left
-            };
-            
-            ctx.DrawText(artistOptions, artist, Color.LightGray);
+            ctx.DrawText(title, titleFont, Color.White, new PointF(30, 330));
+            ctx.DrawText(artist, artistFont, Color.LightGray, new PointF(30, 360));
         });
 
-        // Convert to base64
         using var ms = new MemoryStream();
         image.SaveAsPng(ms);
-        var bytes = ms.ToArray();
-        return Convert.ToBase64String(bytes);
+        return Convert.ToBase64String(ms.ToArray());
     }
 }

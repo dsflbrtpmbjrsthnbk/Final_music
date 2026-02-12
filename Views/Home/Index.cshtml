@@ -1,65 +1,77 @@
 @{
-    Layout = "_Layout";
     ViewData["Title"] = "Music Store";
 }
 
-<div class="container">
-    <!-- Toolbar -->
-    <div class="toolbar">
-        <div class="toolbar-group">
-            <label>Region</label>
-            <select id="language">
-                <option value="en-US">English (USA)</option>
-                <option value="ru-RU">Русский (Россия)</option>
-            </select>
-        </div>
-
-        <div class="toolbar-group">
-            <label>Seed (64-bit)</label>
-            <input type="text" id="seed" value="1770737616447" />
-            <button id="randomSeed">Random seed</button>
-        </div>
-
-        <div class="toolbar-group">
-            <label>Average likes (0-10)</label>
-            <input type="number" id="likes" min="0" max="10" step="0.1" value="3.7" />
-        </div>
-
-        <div class="toolbar-group">
-            <label>View</label>
-            <select id="viewMode">
-                <option value="table">Table</option>
-                <option value="gallery">Gallery</option>
-            </select>
-        </div>
-    </div>
-
-    <!-- Table View -->
-    <div id="tableView" class="view-container active">
-        <table id="songsTable">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Title</th>
-                    <th>Artist</th>
-                    <th>Album</th>
-                    <th>Genre</th>
-                    <th>Likes</th>
-                    <th>Play</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-
-        <div class="pagination">
-            <button id="prevPage">Prev</button>
-            <span id="pageInfo">Page 1</span>
-            <button id="nextPage">Next</button>
-        </div>
-    </div>
-
-    <!-- Gallery View -->
-    <div id="galleryView" class="view-container">
-        <div id="galleryGrid"></div>
-    </div>
+<div class="toolbar">
+    <label>Seed: <input id="seed" value="123456"/></label>
+    <label>View: 
+        <select id="viewMode">
+            <option value="table">Table</option>
+            <option value="gallery">Gallery</option>
+        </select>
+    </label>
 </div>
+
+<div id="tableView" class="view active">
+    <table>
+        <thead><tr><th>#</th><th>Cover</th><th>Title</th><th>Artist</th><th>Album</th><th>Genre</th><th>Likes</th><th>Play</th></tr></thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<div id="galleryView" class="view">
+    <div id="galleryGrid" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+</div>
+
+<script>
+let currentPage = 1;
+const pageSize = 10;
+
+function loadSongs() {
+    const seed = parseInt(document.getElementById("seed").value) || 123456;
+    fetch(`/Home/GetSongs?page=${currentPage}&pageSize=${pageSize}&seed=${seed}`)
+        .then(r=>r.json())
+        .then(data=>{
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+            const gallery = document.getElementById("galleryGrid");
+            gallery.innerHTML = "";
+            data.Songs.forEach(song=>{
+                // Table
+                const tr = document.createElement("tr");
+                tr.innerHTML = `<td>${song.index}</td>
+                    <td><img src="data:image/png;base64,${song.coverImageBase64}" width="50"/></td>
+                    <td>${song.title}</td><td>${song.artist}</td>
+                    <td>${song.album}</td><td>${song.genre}</td>
+                    <td>${song.likes}</td>
+                    <td><button onclick="playSong(${song.index},${seed})">Play</button></td>`;
+                tbody.appendChild(tr);
+
+                // Gallery
+                const div = document.createElement("div");
+                div.style.width="200px";
+                div.style.textAlign="center";
+                div.innerHTML = `<img src="data:image/png;base64,${song.coverImageBase64}" width="180"/><br/>
+                                 ${song.title}<br/><button onclick="playSong(${song.index},${seed})">Play</button>`;
+                gallery.appendChild(div);
+            });
+        });
+}
+
+function playSong(index, seed){
+    const audio = new Audio(`/Home/GetAudio?index=${index}&seed=${seed}`);
+    audio.play();
+}
+
+document.getElementById("viewMode").addEventListener("change", e=>{
+    document.getElementById("tableView").classList.toggle("active", e.target.value==="table");
+    document.getElementById("galleryView").classList.toggle("active", e.target.value==="gallery");
+});
+
+loadSongs();
+</script>
+
+<style>
+.view { display:none; }
+.view.active { display:block; }
+</style>
