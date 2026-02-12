@@ -16,8 +16,11 @@ public class CoverGeneratorService : ICoverGeneratorService
     public string GenerateCover(string title, string artist, int seed)
     {
         var random = new Random(seed);
+
+        // Create image
         using var image = new Image<Rgba32>(400, 400);
 
+        // Gradient background
         var r1 = random.Next(50, 255);
         var g1 = random.Next(50, 255);
         var b1 = random.Next(50, 255);
@@ -34,32 +37,37 @@ public class CoverGeneratorService : ICoverGeneratorService
                 var r = (byte)(r1 + (r2 - r1) * ratio);
                 var g = (byte)(g1 + (g2 - g1) * ratio);
                 var b = (byte)(b1 + (b2 - b1) * ratio);
+
                 ctx.Fill(new Color(new Rgba32(r, g, b)), new RectangleF(0, y, 400, 1));
             }
 
+            // Overlay for text
             ctx.Fill(new Color(new Rgba32(0, 0, 0, 128)), new RectangleF(20, 320, 360, 60));
         });
 
+        // Fonts
+        var titleFont = SystemFonts.CreateFont("Arial", 24, FontStyle.Bold);
+        var artistFont = SystemFonts.CreateFont("Arial", 18, FontStyle.Regular);
+
+        // Draw title
         image.Mutate(ctx =>
         {
-            var titleFont = SystemFonts.CreateFont("Arial", 24, FontStyle.Bold);
-            var artistFont = SystemFonts.CreateFont("Arial", 18, FontStyle.Regular);
-
             var titleOptions = new TextOptions(titleFont)
             {
-                Origin = new PointF(30, 330),
-                WrappingWidth = 340
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top
             };
-            ctx.DrawText(titleOptions, title, Color.White);
+            ctx.DrawText(titleOptions, title, Color.White, new PointF(30, 330));
 
             var artistOptions = new TextOptions(artistFont)
             {
-                Origin = new PointF(30, 360),
-                WrappingWidth = 340
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top
             };
-            ctx.DrawText(artistOptions, artist, Color.LightGray);
+            ctx.DrawText(artistOptions, artist, Color.LightGray, new PointF(30, 360));
         });
 
+        // Convert to Base64
         using var ms = new MemoryStream();
         image.SaveAsPng(ms);
         return Convert.ToBase64String(ms.ToArray());
