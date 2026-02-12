@@ -5,7 +5,7 @@ using MusicStoreApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// Add services
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<IMusicGeneratorService, MusicGeneratorService>();
 builder.Services.AddSingleton<IDataGeneratorService, DataGeneratorService>();
@@ -13,22 +13,21 @@ builder.Services.AddSingleton<ICoverGeneratorService, CoverGeneratorService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// Exception handling
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Static files & routing
 app.UseStaticFiles();
 app.UseRouting();
-app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}"
+);
 
-// Get port from environment variable for Render deployment
+// Run on Render port
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 app.Run($"http://0.0.0.0:{port}");

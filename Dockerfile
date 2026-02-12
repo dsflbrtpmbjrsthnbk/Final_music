@@ -12,7 +12,7 @@ RUN dotnet publish -c Release -o /app/publish
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-COPY --from=build /app/publish .
+COPY --from=build /app/publish ./
 
 # Install font dependencies for ImageSharp
 RUN apt-get update && apt-get install -y \
@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y \
     libc6-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Expose port (Render will set PORT env var)
+# Environment & expose port
 ENV ASPNETCORE_URLS=http://+:$PORT
 EXPOSE $PORT
 
